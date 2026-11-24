@@ -1,0 +1,52 @@
+# ===================================================================
+# نظام إدارة المدرسة المتكامل — إعدادات الحماية والتهيئة (.htaccess)
+# ===================================================================
+
+# 1. منع تصفح المجلدات واستعراض الملفات
+Options -Indexes
+
+# 2. حماية الملفات الحساسة وملفات التكوين والنسخ الاحتياطية
+<FilesMatch "\.(sql|bak|log|gz|sqlite|sqlite3|db)$|^(config\.php|error_log)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# 3. ترويسات الأمان (Security Headers)
+<IfModule mod_headers.c>
+    # منع تخمين نوع المحتوى
+    Header always set X-Content-Type-Options "nosniff"
+    
+    # منع التضمين داخل إطارات خارجية لحماية المستخدمين من Clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+    
+    # سياسة المرجع الآمن
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # منع استغلال XSS في المتصفحات القديمة
+    Header always set X-XSS-Protection "1; mode=block"
+    
+    # سياسة أمان المحتوى الشاملة
+    Header set Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://fonts.gstatic.com data: blob:; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' blob:;"
+    
+    # تعطيل الكاش لملف الواجهة وملف عامل الخدمة (PWA Service Worker)
+    <FilesMatch "^(index\.html|sw\.js|manifest\.webmanifest)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+</IfModule>
+
+# 4. إعادة التوجيه الإجباري إلى اتصال مشفر HTTPS (قم بإزالة علامة # لتفعيلها عند توفر شهادة SSL)
+# <IfModule mod_rewrite.c>
+#     RewriteEngine On
+#     RewriteCond %{HTTPS} off
+#     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# </IfModule>
+
+# 5. ضبط الترميز الافتراضي utf-8
+AddDefaultCharset UTF-8
